@@ -31,8 +31,11 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "corsheaders",
     "api",
-    "storages",
 ]
+
+# Only add storages if AWS settings are configured
+if os.environ.get("AWS_ACCESS_KEY_ID") and os.environ.get("AWS_SECRET_ACCESS_KEY"):
+    INSTALLED_APPS.append("storages")
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -71,8 +74,13 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
-# Configure media storage for production
-if not DEBUG:
+# Configure media storage for production only if AWS credentials are provided
+if (
+    not DEBUG
+    and os.environ.get("AWS_ACCESS_KEY_ID")
+    and os.environ.get("AWS_SECRET_ACCESS_KEY")
+    and os.environ.get("AWS_STORAGE_BUCKET_NAME")
+):
     # Setup S3 or other storage for production
     DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
     AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
