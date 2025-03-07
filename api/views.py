@@ -35,15 +35,28 @@ class UserViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=["POST"])
     def register(self, request):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            token, _ = Token.objects.get_or_create(user=user)
+        try:
+            print("Registering user with data:", request.data)  # Add logging
+            serializer = self.get_serializer(data=request.data)
+            if serializer.is_valid():
+                user = serializer.save()
+                token, _ = Token.objects.get_or_create(user=user)
+                return Response(
+                    {"token": token.key, "user_id": user.pk, "email": user.email},
+                    status=status.HTTP_201_CREATED,
+                )
+            print("Registration validation errors:", serializer.errors)  # Add logging
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            # Log the error details
+            print(f"Registration error: {str(e)}")
+            import traceback
+
+            traceback.print_exc()
             return Response(
-                {"token": token.key, "user_id": user.pk, "email": user.email},
-                status=status.HTTP_201_CREATED,
+                {"error": "Server error. Please try again later."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(
         detail=False, methods=["GET"], permission_classes=[permissions.IsAuthenticated]
