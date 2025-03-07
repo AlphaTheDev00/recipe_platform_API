@@ -375,6 +375,112 @@ CATEGORIES = [
     "Dips",
 ]
 
+FOOD_ADJECTIVES = [
+    "Savory",
+    "Sweet",
+    "Spicy",
+    "Tangy",
+    "Creamy",
+    "Crispy",
+    "Juicy",
+    "Fresh",
+    "Homemade",
+    "Roasted",
+    "Grilled",
+    "Baked",
+    "Fried",
+    "Steamed",
+    "Slow-cooked",
+    "Sautéed",
+    "Glazed",
+    "Hearty",
+    "Light",
+    "Rich",
+    "Zesty",
+    "Fragrant",
+    "Smoky",
+    "Herbed",
+    "Buttery",
+]
+
+FOOD_TYPES = [
+    "Pasta",
+    "Rice",
+    "Soup",
+    "Salad",
+    "Stew",
+    "Curry",
+    "Stir-fry",
+    "Casserole",
+    "Sandwich",
+    "Burger",
+    "Pizza",
+    "Tacos",
+    "Risotto",
+    "Roast",
+    "Pie",
+    "Cake",
+    "Cookies",
+    "Bread",
+    "Muffins",
+    "Chicken",
+    "Beef",
+    "Pork",
+    "Fish",
+    "Seafood",
+    "Tofu",
+    "Vegetables",
+    "Noodles",
+    "Pancakes",
+    "Waffles",
+    "Omelette",
+    "Frittata",
+    "Paella",
+    "Lasagna",
+]
+
+FOOD_INGREDIENTS = [
+    "chicken",
+    "beef",
+    "pork",
+    "fish",
+    "shrimp",
+    "tofu",
+    "eggs",
+    "cheese",
+    "pasta",
+    "rice",
+    "potatoes",
+    "tomatoes",
+    "onions",
+    "garlic",
+    "bell peppers",
+    "broccoli",
+    "spinach",
+    "mushrooms",
+    "carrots",
+    "flour",
+    "sugar",
+    "butter",
+    "milk",
+    "cream",
+    "olive oil",
+    "lemon",
+    "lime",
+    "herbs",
+    "spices",
+    "salt",
+    "pepper",
+    "bread",
+    "beans",
+    "chickpeas",
+    "quinoa",
+    "corn",
+    "peas",
+    "avocado",
+    "cucumbers",
+]
+
 
 class Command(BaseCommand):
     help = "Seed database with food recipe data"
@@ -477,7 +583,10 @@ class Command(BaseCommand):
         # Create additional random recipes if specified
         random_recipes_created = 0
         for i in range(options.get("recipes", 10)):
-            title = fake.sentence(nb_words=3).rstrip(".")
+            # Generate food-related title instead of random sentence
+            adjective = random.choice(FOOD_ADJECTIVES)
+            food_type = random.choice(FOOD_TYPES)
+            title = f"{adjective} {food_type}"
 
             # Skip if recipe with this title already exists
             if Recipe.objects.filter(title=title).exists():
@@ -487,17 +596,26 @@ class Command(BaseCommand):
             author = random.choice(users)
 
             cooking_time = random.randint(10, 120)
-            servings = random.randint(1, 10)
             difficulty_choices = ["easy", "medium", "hard"]
 
-            instructions = ""
+            # Create food-focused description
+            description = f"A delicious {adjective.lower()} {food_type.lower()} recipe that's perfect for any occasion."
+
+            # Create realistic instructions
+            instructions = "1. Gather all ingredients and prepare your workspace.\n"
+            instructions += "2. Chop and measure ingredients as needed.\n"
             steps = random.randint(3, 8)
-            for step in range(1, steps + 1):
-                instructions += f"{step}. {fake.sentence()}\n"
+            for step in range(3, steps + 3):
+                if step == 3:
+                    instructions += f"{step}. Combine main ingredients in a bowl.\n"
+                elif step == steps + 2:
+                    instructions += f"{step}. Serve and enjoy!\n"
+                else:
+                    instructions += f"{step}. {random.choice(['Cook', 'Mix', 'Stir', 'Add', 'Fold in', 'Simmer', 'Bake', 'Prepare'])} for {random.randint(5, 30)} minutes.\n"
 
             recipe = Recipe.objects.create(
                 title=title,
-                description=fake.text(max_nb_chars=200),
+                description=description,
                 instructions=instructions,
                 cooking_time=cooking_time,
                 difficulty=random.choice(difficulty_choices),
@@ -506,8 +624,11 @@ class Command(BaseCommand):
 
             # Add ingredients (3-10 random ingredients)
             ingredient_count = random.randint(3, 10)
-            for _ in range(ingredient_count):
-                Ingredient.objects.create(recipe=recipe, name=fake.word())
+            used_ingredients = random.sample(
+                FOOD_INGREDIENTS, min(ingredient_count, len(FOOD_INGREDIENTS))
+            )
+            for ingredient in used_ingredients:
+                Ingredient.objects.create(recipe=recipe, name=ingredient)
 
             # Add 1-4 categories
             category_count = random.randint(1, 4)
