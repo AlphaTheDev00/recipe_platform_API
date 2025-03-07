@@ -527,16 +527,7 @@ class Command(BaseCommand):
         # Force 50 recipes
         options['recipes'] = 50
 
-        if should_clear:
-            self.stdout.write("Clearing existing data...")
-            Favorite.objects.all().delete()
-            Rating.objects.all().delete()
-            Comment.objects.all().delete()
-            Ingredient.objects.all().delete()
-            Recipe.objects.all().delete()
-            Category.objects.all().delete()
-            User.objects.filter(is_superuser=False).delete()
-            self.stdout.write(self.style.SUCCESS("Database cleared successfully!"))
+        # Data already cleared above
 
         # Create superuser if it doesn't exist
         if not User.objects.filter(username="admin").exists():
