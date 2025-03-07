@@ -22,8 +22,8 @@ SECRET_KEY = os.environ.get(
     "SECRET_KEY", "django-insecure-default-dev-key-change-in-production"
 )
 
-# Set DEBUG to False in production
-DEBUG = False if os.environ.get("ENVIRONMENT") == "production" else True
+# Set DEBUG to True for troubleshooting, then turn off later
+DEBUG = True if os.environ.get("ENVIRONMENT") != "production" else False
 
 # Update ALLOWED_HOSTS to include all possible domains during development
 ALLOWED_HOSTS = os.environ.get(
@@ -170,7 +170,9 @@ CORS_ALLOWED_ORIGINS = [
 
 # Add these settings for proper CORS handling
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = False  # Make sure this is False
+CORS_ALLOW_ALL_ORIGINS = (
+    True  # Enable CORS for all origins temporarily to help with debugging
+)
 CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 CORS_ALLOW_HEADERS = [
     "accept",
