@@ -854,3 +854,21 @@ class FavoriteViewSet(viewsets.ModelViewSet):
 def health_check(request):
     """Health check endpoint to ensure the API is running"""
     return Response({"status": "healthy"}, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+def api_root(request):
+    """Root endpoint providing API info and documentation"""
+    return Response(
+        {
+            "name": "Savora Recipe API",
+            "version": "1.0",
+            "description": "REST API for managing recipes, ratings, comments and more",
+            "endpoints": {
+                "health_check": "/health/",
+                "api_root": "/api/",
+                "auth_token": "/api-token-auth/",
+                "admin": "/admin/",
+            },
+        }
+    )

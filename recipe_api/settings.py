@@ -22,8 +22,8 @@ SECRET_KEY = os.environ.get(
     "SECRET_KEY", "django-insecure-default-dev-key-change-in-production"
 )
 
-# Set DEBUG to True temporarily to serve media files during development
-DEBUG = True
+# Set DEBUG to False in production
+DEBUG = False if os.environ.get("ENVIRONMENT") == "production" else True
 
 # Update ALLOWED_HOSTS to include all possible domains during development
 ALLOWED_HOSTS = os.environ.get(
