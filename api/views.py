@@ -17,6 +17,7 @@ from .serializers import (
 from django.db.models import Avg, Q, Count, F
 from django.utils import timezone
 from datetime import timedelta
+import os
 
 # views
 
@@ -38,7 +39,7 @@ class UserViewSet(viewsets.GenericViewSet):
         try:
             print("\n==== USER REGISTRATION DEBUG ====")
             print("Registering user with data:", request.data)
-            
+
             # Check if database is accessible
             try:
                 user_count = User.objects.count()
@@ -46,12 +47,13 @@ class UserViewSet(viewsets.GenericViewSet):
             except Exception as db_err:
                 print(f"Database check error during registration: {str(db_err)}")
                 import traceback
+
                 traceback.print_exc()
                 return Response(
                     {"error": f"Database connection error: {str(db_err)}"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
-                
+
             # Check for existing user with same username
             username = request.data.get("username", "")
             if User.objects.filter(username=username).exists():
@@ -60,10 +62,10 @@ class UserViewSet(viewsets.GenericViewSet):
                     {"username": ["A user with that username already exists."]},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            
+
             serializer = self.get_serializer(data=request.data)
             print("Serializer initialized")
-            
+
             if serializer.is_valid():
                 print("Serializer is valid, saving user")
                 user = serializer.save()
@@ -73,7 +75,7 @@ class UserViewSet(viewsets.GenericViewSet):
                     {"token": token.key, "user_id": user.pk, "email": user.email},
                     status=status.HTTP_201_CREATED,
                 )
-                
+
             print("Registration validation errors:", serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
@@ -871,56 +873,33 @@ class FavoriteViewSet(viewsets.ModelViewSet):
 
         try:
             recipe = Recipe.objects.get(id=recipe_id)
-            favorite = Favorite.objects.filter(user=request.user, recipe=recipe).first()uest):
+            favorite = Favorite.objects.filter(user=request.user, recipe=recipe).first()
 
             if favorite:
-                favorite.delete() Try a simple query to verify database connection
-                return Response()
-                    {"message": "Recipe removed from favorites"},.objects.count()
-                    status=status.HTTP_200_OK,
-                )nected",
-            else:
-                Favorite.objects.create(user=request.user, recipe=recipe)ount,
+                favorite.delete()
                 return Response(
-                    {"message": "Recipe added to favorites"},environ.get("DATABASE_URL", "").split("@")[1].split("/")[0] if "@" in os.environ.get("DATABASE_URL", "") else "unknown"
+                    {"message": "Recipe removed from favorites"},
+                    status=status.HTTP_200_OK,
+                )
+            else:
+                Favorite.objects.create(user=request.user, recipe=recipe)
+                return Response(
+                    {"message": "Recipe added to favorites"},
                     status=status.HTTP_201_CREATED,
-                ), status=status.HTTP_200_OK)
-        except Recipe.DoesNotExist:xcept Exception as e:
-            return Response(        print(f"Database check error: {str(e)}")
+                )
+        except Recipe.DoesNotExist:
+            return Response(
+                {"error": "Recipe not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            print(f"Database check error: {str(e)}")
+            import traceback
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    )        }            },                "admin": "/admin/",                "auth_token": "/api-token-auth/",                "api_root": "/api/",                "health_check": "/health/",            "endpoints": {            "description": "REST API for managing recipes, ratings, comments and more",            "version": "1.0",            "name": "Savora Recipe API",        {    return Response(    """Root endpoint providing API info and documentation"""def api_root(request):@api_view(["GET"])    return Response({"status": "healthy"}, status=status.HTTP_200_OK)    """Health check endpoint to ensure the API is running"""def health_check(request):@api_view(["GET"])# Add a health check endpoint            )                {"error": "Recipe not found"}, status=status.HTTP_404_NOT_FOUND        import traceback
-        traceback.print_exc()
-        return Response({
-            "status": "error",
-            "error": str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            traceback.print_exc()
+            return Response(
+                {"status": "error", "error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 @api_view(["GET"])
@@ -940,3 +919,50 @@ def api_root(request):
             },
         }
     )
+
+
+@api_view(["GET"])
+def health_check(request):
+    """Health check endpoint to ensure the API is running"""
+    return Response({"status": "healthy"}, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+def database_check(request):
+    """Diagnostic endpoint to verify database connection"""
+    try:
+        # Try a simple query to verify database connection
+        user_count = User.objects.count()
+        recipe_count = Recipe.objects.count()
+
+        # Get database info while hiding credentials
+        db_url = os.environ.get("DATABASE_URL", "")
+        if "@" in db_url:
+            parts = db_url.split("@")
+            if len(parts) > 1 and "/" in parts[1]:
+                host_part = parts[1].split("/")[0]
+            else:
+                host_part = "unknown"
+        else:
+            host_part = "unknown"
+
+        return Response(
+            {
+                "status": "connected",
+                "database_info": {
+                    "user_count": user_count,
+                    "recipe_count": recipe_count,
+                    "database_host": host_part,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+    except Exception as e:
+        print(f"Database check error: {str(e)}")
+        import traceback
+
+        traceback.print_exc()
+        return Response(
+            {"status": "error", "error": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
