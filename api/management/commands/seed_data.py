@@ -513,29 +513,16 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        parser = argparse.ArgumentParser(
-            description="Seed database with food recipe data"
-        )
-        parser.add_argument("--clear", action="store_true", help="Clear existing data")
-        parser.add_argument(
-            "--users", type=int, default=5, help="Number of users to create"
-        )
-        parser.add_argument(
-            "--recipes", type=int, default=10, help="Number of recipes to create"
-        )
-        parser.add_argument(
-            "--ratings", type=int, default=50, help="Number of ratings to create"
-        )
-        parser.add_argument(
-            "--comments", type=int, default=30, help="Number of comments to create"
-        )
-        parser.add_argument(
-            "--favorites", type=int, default=20, help="Number of favorites to create"
-        )
+        # Print command-line arguments for debugging
+        self.stdout.write("Command arguments:")
+        self.stdout.write(f"sys.argv: {sys.argv}")
+        self.stdout.write(f"args: {args}")
+        self.stdout.write(f"options: {options}")
 
-        args_parsed = parser.parse_args(args)
+        # Simple direct check: just look for '--clear' anywhere in the arguments
+        should_clear = "--clear" in sys.argv
 
-        if args_parsed.clear:
+        if should_clear:
             self.stdout.write("Clearing existing data...")
             Favorite.objects.all().delete()
             Rating.objects.all().delete()
@@ -544,6 +531,7 @@ class Command(BaseCommand):
             Recipe.objects.all().delete()
             Category.objects.all().delete()
             User.objects.filter(is_superuser=False).delete()
+            self.stdout.write(self.style.SUCCESS("Database cleared successfully!"))
 
         # Create superuser if it doesn't exist
         if not User.objects.filter(username="admin").exists():
@@ -552,7 +540,7 @@ class Command(BaseCommand):
 
         # Create normal users
         users = []
-        for i in range(args_parsed.users):
+        for i in range(options["users"]):
             username = f"user{i+1}"
             if not User.objects.filter(username=username).exists():
                 user = User.objects.create_user(
@@ -567,7 +555,7 @@ class Command(BaseCommand):
 
         # If no users were created (because they already existed), get existing ones
         if not users:
-            users = User.objects.filter(is_superuser=False)[: args_parsed.users]
+            users = User.objects.filter(is_superuser=False)[: options["users"]]
 
         # Create categories
         categories = {}
@@ -608,7 +596,7 @@ class Command(BaseCommand):
 
         # Create additional random recipes if specified
         random_recipes_created = 0
-        for i in range(args_parsed.recipes):
+        for i in range(options["recipes"]):
             # Generate food-related title instead of random sentence
             adjective = random.choice(FOOD_ADJECTIVES)
             food_type = random.choice(FOOD_TYPES)
@@ -670,7 +658,7 @@ class Command(BaseCommand):
 
         # Create ratings
         ratings_created = 0
-        for _ in range(args_parsed.ratings):
+        for _ in range(options["ratings"]):
             user = random.choice(users)
             recipe = random.choice(recipes)
 
@@ -691,7 +679,7 @@ class Command(BaseCommand):
 
         # Create comments
         comments_created = 0
-        for _ in range(args_parsed.comments):
+        for _ in range(options["comments"]):
             user = random.choice(users)
             recipe = random.choice(recipes)
 
@@ -709,7 +697,7 @@ class Command(BaseCommand):
 
         # Create favorites
         favorites_created = 0
-        for _ in range(args_parsed.favorites):
+        for _ in range(options["favorites"]):
             user = random.choice(users)
             recipe = random.choice(recipes)
 
