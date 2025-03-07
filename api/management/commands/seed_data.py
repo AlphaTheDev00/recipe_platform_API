@@ -1,4 +1,6 @@
 import random
+import sys
+import argparse
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from api.models import (
@@ -505,11 +507,21 @@ class Command(BaseCommand):
             "--favorites", type=int, default=20, help="Number of favorites to create"
         )
         parser.add_argument(
-            "--clear", action="store_true", help="Clear existing data before seeding"
+            "--clear",
+            action="store_true",
+            help="Clear existing data before seeding",
         )
 
     def handle(self, *args, **options):
-        if options.get("clear"):
+        parser = argparse.ArgumentParser(
+            description="Seed database with food recipe data"
+        )
+        parser.add_argument("--clear", action="store_true", help="Clear existing data")
+        args_parsed, _ = parser.parse_known_args(
+            sys.argv[2:]
+        )  # Skip manage.py and seed_data
+
+        if args_parsed.clear:
             self.stdout.write("Clearing existing data...")
             Favorite.objects.all().delete()
             Rating.objects.all().delete()
