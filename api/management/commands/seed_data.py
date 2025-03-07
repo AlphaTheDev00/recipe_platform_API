@@ -513,14 +513,19 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        # Print command-line arguments for debugging
-        self.stdout.write("Command arguments:")
-        self.stdout.write(f"sys.argv: {sys.argv}")
-        self.stdout.write(f"args: {args}")
-        self.stdout.write(f"options: {options}")
-
-        # Simple direct check: just look for '--clear' anywhere in the arguments
-        should_clear = "--clear" in sys.argv
+        # Always clear existing data
+        self.stdout.write("Clearing existing data...")
+        Favorite.objects.all().delete()
+        Rating.objects.all().delete()
+        Comment.objects.all().delete()
+        Ingredient.objects.all().delete()
+        Recipe.objects.all().delete()
+        Category.objects.all().delete()
+        User.objects.filter(is_superuser=False).delete()
+        self.stdout.write(self.style.SUCCESS("Database cleared successfully!"))
+        
+        # Force 50 recipes
+        options['recipes'] = 50
 
         if should_clear:
             self.stdout.write("Clearing existing data...")
