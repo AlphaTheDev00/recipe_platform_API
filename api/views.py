@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework import viewsets, permissions, status, filters
-from rest_framework.decorators import action, permission_classes
+from rest_framework.decorators import action, permission_classes, api_view
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
@@ -830,3 +830,10 @@ class FavoriteViewSet(viewsets.ModelViewSet):
             return Response(
                 {"error": "Recipe not found"}, status=status.HTTP_404_NOT_FOUND
             )
+
+
+# Add a health check endpoint
+@api_view(["GET"])
+def health_check(request):
+    """Health check endpoint to ensure the API is running"""
+    return Response({"status": "healthy"}, status=status.HTTP_200_OK)
