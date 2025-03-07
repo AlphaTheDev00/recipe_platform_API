@@ -4,7 +4,7 @@ from .models import Recipe, Ingredient, Rating, Comment, Favorite, UserProfile, 
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    profile_picture_url = serializers.SerializerMethodField(read_only=True)
+    profile_picture_url = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
@@ -20,11 +20,22 @@ class UserProfileSerializer(serializers.ModelSerializer):
         extra_kwargs = {"profile_picture": {"write_only": True, "required": False}}
 
     def get_profile_picture_url(self, obj):
-        if obj.profile_picture:
-            request = self.context.get("request")
+        request = self.context.get("request")
+        if obj.profile_picture and hasattr(obj.profile_picture, "url"):
             if request:
+                # Get the full URL including domain
                 return request.build_absolute_uri(obj.profile_picture.url)
-            return obj.profile_picture.url
+            # For Heroku deployment
+            from django.conf import settings
+
+            if settings.DEBUG:
+                return obj.profile_picture.url
+            elif settings.AWS_STORAGE_BUCKET_NAME:
+                # Return S3 URL if S3 is configured
+                return f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{obj.profile_picture.name}"
+            else:
+                # Fallback to a relative URL
+                return obj.profile_picture.url
         return None
 
 
@@ -47,9 +58,15 @@ class UserSerializer(serializers.ModelSerializer):
     def get_profile_picture_url(self, obj):
         if hasattr(obj, "profile") and obj.profile.profile_picture:
             request = self.context.get("request")
+            from django.conf import settings
+
             if request:
                 return request.build_absolute_uri(obj.profile.profile_picture.url)
-            return obj.profile.profile_picture.url
+            elif settings.AWS_STORAGE_BUCKET_NAME:
+                # Return S3 URL if S3 is configured
+                return f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{obj.profile.profile_picture.name}"
+            else:
+                return obj.profile.profile_picture.url
         return None
 
     def create(self, validated_data):
@@ -87,6 +104,28 @@ class UserSerializer(serializers.ModelSerializer):
             UserProfile.objects.update_or_create(user=instance, defaults=profile_data)
 
         return instance
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        request = self.context.get("request")
+
+        # Add this check to ensure profile_picture_url is always included
+        if "profile" in representation and representation["profile"]:
+            if (
+                "profile_picture_url" not in representation["profile"]
+                and hasattr(instance, "profile")
+                and instance.profile.profile_picture
+            ):
+                if request:
+                    representation["profile"]["profile_picture_url"] = (
+                        request.build_absolute_uri(instance.profile.profile_picture.url)
+                    )
+                else:
+                    representation["profile"][
+                        "profile_picture_url"
+                    ] = instance.profile.profile_picture.url
+
+        return representation
 
 
 class CategorySerializer(serializers.ModelSerializer):

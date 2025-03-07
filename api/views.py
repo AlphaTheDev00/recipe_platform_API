@@ -185,7 +185,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         # Filter by ingredient
         ingredient = self.request.query_params.get("ingredient", None)
         if ingredient:
-            queryset = queryset.filter(ingredients__name__icontains=ingredient)
+            queryset = queryset.filter(ingredients__name__icontains(ingredient))
 
         # Filter by category name
         category = self.request.query_params.get("category", None)
@@ -211,6 +211,23 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+    def get_serializer_context(self):
+        """
+        Extra context provided to the serializer class.
+        """
+        context = super().get_serializer_context()
+        # Make sure request is always in context
+        if "request" not in context and hasattr(self, "request"):
+            context["request"] = self.request
+        return context
+
+    def handle_exception(self, exc):
+        """
+        Handle exceptions with better error responses
+        """
+        print(f"API Exception: {type(exc).__name__}: {str(exc)}")
+        return super().handle_exception(exc)
 
     @action(detail=False, methods=["GET"])
     def my_recipes(self, request):
