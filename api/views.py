@@ -41,6 +41,7 @@ class UserViewSet(viewsets.GenericViewSet):
             if serializer.is_valid():
                 user = serializer.save()
                 token, _ = Token.objects.get_or_create(user=user)
+                print("User registered successfully:", user.username)  # Add logging
                 return Response(
                     {"token": token.key, "user_id": user.pk, "email": user.email},
                     status=status.HTTP_201_CREATED,
