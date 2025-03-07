@@ -1,6 +1,9 @@
-# This file is causing confusion - should be removed
+# This file should be removed completely
+# The correct wsgi.py is in the recipe_api folder
 import os
-from recipe_api.wsgi import application
 
-# Make the application object directly available
-application = application
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "recipe_api.settings")
+
+from django.core.wsgi import get_wsgi_application
+
+application = get_wsgi_application()
