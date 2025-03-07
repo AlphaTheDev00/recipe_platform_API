@@ -218,6 +218,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
     ordering_fields = ["created_at", "title", "cooking_time"]
     ordering = ["-created_at"]  # Default ordering
 
+    def finalize_response(self, request, response, *args, **kwargs):
+        # Add cache-busting headers to all responses
+        response = super().finalize_response(request, response, *args, **kwargs)
+        response["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response["Pragma"] = "no-cache"
+        response["Expires"] = "0"
+        return response
+
     def get_queryset(self):
         queryset = Recipe.objects.all().annotate(avg_rating=Avg("ratings__score"))
 
