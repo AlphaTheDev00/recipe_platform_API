@@ -23,7 +23,7 @@ SECRET_KEY = os.environ.get(
 )
 
 # Set DEBUG to True for troubleshooting, then turn off later
-DEBUG = True if os.environ.get("ENVIRONMENT") != "production" else False
+DEBUG = True
 
 # Update ALLOWED_HOSTS to include all possible domains during development
 ALLOWED_HOSTS = os.environ.get(
