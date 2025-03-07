@@ -343,14 +343,14 @@ class Command(BaseCommand):
             if Recipe.objects.filter(title=recipe_data["title"]).exists():
                 continue
 
-            # Create recipe
+            # Create recipe with only the fields that exist in the model
             author = random.choice(users)
             recipe = Recipe.objects.create(
                 title=recipe_data["title"],
                 description=recipe_data["description"],
                 instructions=recipe_data["instructions"],
                 cooking_time=recipe_data["cooking_time"],
-                servings=recipe_data["servings"],
+                # Remove the servings field
                 difficulty=recipe_data["difficulty"],
                 author=author,
             )
@@ -393,7 +393,7 @@ class Command(BaseCommand):
                 description=fake.text(max_nb_chars=200),
                 instructions=instructions,
                 cooking_time=cooking_time,
-                servings=servings,
+                # Remove the servings field here too
                 difficulty=random.choice(difficulty_choices),
                 author=author,
             )
