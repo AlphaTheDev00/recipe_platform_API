@@ -931,12 +931,44 @@ def health_check(request):
 def database_check(request):
     """Diagnostic endpoint to verify database connection"""
     try:
+        # Get raw database URL for inspection (hide password)
+        db_url = os.environ.get("DATABASE_URL", "")
+        safe_db_url = db_url
+        if "@" in safe_db_url:
+            # Hide password in logs
+            parts = safe_db_url.split("@")
+            if ":" in parts[0]:
+                credentials = parts[0].split(":")
+                credentials[1] = "****"  # Replace password with asterisks
+                parts[0] = ":".join(credentials)
+            safe_db_url = "@".join(parts)
+
+        print(f"DEBUG: Using DATABASE_URL: {safe_db_url}")
+
+        # Try to parse the DSN - this will fail if parameters are invalid
+        import psycopg2
+
+        conn_params = {}
+        # Extract connection parameters without connecting
+        try:
+            params = psycopg2._connect.parse_dsn(db_url)
+            print(f"DEBUG: Parsed DSN parameters: {params}")
+        except Exception as parse_err:
+            print(f"DEBUG: DSN parsing error: {str(parse_err)}")
+            return Response(
+                {
+                    "status": "error",
+                    "error": f"DSN parsing error: {str(parse_err)}",
+                    "raw_url": safe_db_url,
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
         # Try a simple query to verify database connection
         user_count = User.objects.count()
         recipe_count = Recipe.objects.count()
 
         # Get database info while hiding credentials
-        db_url = os.environ.get("DATABASE_URL", "")
         if "@" in db_url:
             parts = db_url.split("@")
             if len(parts) > 1 and "/" in parts[1]:
