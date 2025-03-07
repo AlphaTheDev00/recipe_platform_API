@@ -161,18 +161,16 @@ if (
     AWS_DEFAULT_ACL = "public-read"
     AWS_S3_CUSTOM_DOMAIN = os.environ.get("AWS_S3_CUSTOM_DOMAIN")
 
-# CORS settings - fix CORS for Netlify
+# CORS settings - fix CORS issues
 CORS_ALLOWED_ORIGINS = [
     "https://savora-recipe.netlify.app",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
 
-# Add these settings for proper CORS handling
+# Enable CORS fully temporarily to troubleshoot
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = (
-    True  # Enable CORS for all origins temporarily to help with debugging
-)
 CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 CORS_ALLOW_HEADERS = [
     "accept",
@@ -184,10 +182,17 @@ CORS_ALLOW_HEADERS = [
     "user-agent",
     "x-csrftoken",
     "x-requested-with",
+    "access-control-allow-origin",
 ]
 
-# Important for preflight requests
-CORS_PREFLIGHT_MAX_AGE = 86400  # 24 hours
+# Add this to fix CORS for Heroku
+CORS_REPLACE_HTTPS_REFERER = True
+CSRF_TRUSTED_ORIGINS = ["https://savora-recipe.netlify.app"]
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Fix Heroku isssues
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+CSRF_TRUSTED_ORIGINS = ["https://savora-recipe.netlify.app"]
 
 # Internationalization
 LANGUAGE_CODE = "en-us"
