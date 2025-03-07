@@ -2,7 +2,14 @@ import os
 from pathlib import Path
 import dj_database_url
 from dotenv import load_dotenv
-import cloudinary
+
+# Try to import cloudinary, but don't crash if not available
+try:
+    import cloudinary
+
+    CLOUDINARY_AVAILABLE = True
+except ImportError:
+    CLOUDINARY_AVAILABLE = False
 
 # Load environment variables from .env file
 load_dotenv()
@@ -36,9 +43,11 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "corsheaders",
     "api",
-    "cloudinary_storage",
-    "cloudinary",
 ]
+
+# Add cloudinary apps only if available
+if CLOUDINARY_AVAILABLE:
+    INSTALLED_APPS.extend(["cloudinary_storage", "cloudinary"])
 
 # Only add storages if AWS settings are configured
 if os.environ.get("AWS_ACCESS_KEY_ID") and os.environ.get("AWS_SECRET_ACCESS_KEY"):
@@ -219,30 +228,17 @@ if not DEBUG:
         MEDIA_ROOT = os.path.join(BASE_DIR, "media")
         MEDIA_URL = "/media/"
 
-# Update the INSTALLED_APPS list to include cloudinary apps
-INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-    "rest_framework",
-    "rest_framework.authtoken",
-    "corsheaders",
-    "api",
-    "cloudinary_storage",
-    "cloudinary",
-]
-
-# Add Cloudinary settings
-CLOUDINARY_STORAGE = {
-    "CLOUD_NAME": os.environ.get("CLOUDINARY_CLOUD_NAME", "picture"),
-    "API_KEY": os.environ.get("CLOUDINARY_API_KEY", "532336579731324"),
-    "API_SECRET": os.environ.get(
-        "CLOUDINARY_API_SECRET", "blu8Uz2x4iReT8qgmhJURF2N-QU"
-    ),
-}
-
-# Configure Django to use Cloudinary for media storage
-DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+# Configure Django to use Cloudinary for media storage only if available
+if CLOUDINARY_AVAILABLE:
+    # Add Cloudinary settings
+    CLOUDINARY_STORAGE = {
+        "CLOUD_NAME": os.environ.get("CLOUDINARY_CLOUD_NAME", "picture"),
+        "API_KEY": os.environ.get("CLOUDINARY_API_KEY", "532336579731324"),
+        "API_SECRET": os.environ.get(
+            "CLOUDINARY_API_SECRET", "blu8Uz2x4iReT8qgmhJURF2N-QU"
+        ),
+    }
+    DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+else:
+    # Fallback to default file storage
+    DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
