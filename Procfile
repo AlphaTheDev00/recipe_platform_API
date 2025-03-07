@@ -1,1 +1,1 @@
-web: gunicorn recipe_api.wsgi:application --log-file - --preload
+web: gunicorn recipe_project.wsgi:application --log-file - --preload
