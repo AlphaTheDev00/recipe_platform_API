@@ -6,7 +6,7 @@ from django.conf.urls.static import static
 from django.views.generic import RedirectView
 
 # Make sure these imports are at the top
-from api.views import health_check, api_root
+from api.views import health_check, api_root, database_check
 
 urlpatterns = [
     # Root URL must come first
@@ -16,6 +16,7 @@ urlpatterns = [
     path("api-token-auth/", obtain_auth_token, name="api_token_auth"),
     path("api/", include("api.urls")),
     path("health/", health_check, name="health_check"),
+    path("db-check/", database_check, name="database_check"),
 ]
 
 # Add static and media URL patterns in development

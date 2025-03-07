@@ -36,17 +36,45 @@ class UserViewSet(viewsets.GenericViewSet):
     @action(detail=False, methods=["POST"])
     def register(self, request):
         try:
-            print("Registering user with data:", request.data)  # Add logging
+            print("\n==== USER REGISTRATION DEBUG ====")
+            print("Registering user with data:", request.data)
+            
+            # Check if database is accessible
+            try:
+                user_count = User.objects.count()
+                print(f"Current user count: {user_count}")
+            except Exception as db_err:
+                print(f"Database check error during registration: {str(db_err)}")
+                import traceback
+                traceback.print_exc()
+                return Response(
+                    {"error": f"Database connection error: {str(db_err)}"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+                
+            # Check for existing user with same username
+            username = request.data.get("username", "")
+            if User.objects.filter(username=username).exists():
+                print(f"Username '{username}' already exists!")
+                return Response(
+                    {"username": ["A user with that username already exists."]},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
             serializer = self.get_serializer(data=request.data)
+            print("Serializer initialized")
+            
             if serializer.is_valid():
+                print("Serializer is valid, saving user")
                 user = serializer.save()
                 token, _ = Token.objects.get_or_create(user=user)
-                print("User registered successfully:", user.username)  # Add logging
+                print(f"User registered successfully: {user.username} (ID: {user.pk})")
                 return Response(
                     {"token": token.key, "user_id": user.pk, "email": user.email},
                     status=status.HTTP_201_CREATED,
                 )
-            print("Registration validation errors:", serializer.errors)  # Add logging
+                
+            print("Registration validation errors:", serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             # Log the error details
@@ -55,7 +83,7 @@ class UserViewSet(viewsets.GenericViewSet):
 
             traceback.print_exc()
             return Response(
-                {"error": "Server error. Please try again later."},
+                {"error": f"Server error: {str(e)}. Please try again later."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -843,31 +871,56 @@ class FavoriteViewSet(viewsets.ModelViewSet):
 
         try:
             recipe = Recipe.objects.get(id=recipe_id)
-            favorite = Favorite.objects.filter(user=request.user, recipe=recipe).first()
+            favorite = Favorite.objects.filter(user=request.user, recipe=recipe).first()uest):
 
             if favorite:
-                favorite.delete()
-                return Response(
-                    {"message": "Recipe removed from favorites"},
+                favorite.delete() Try a simple query to verify database connection
+                return Response()
+                    {"message": "Recipe removed from favorites"},.objects.count()
                     status=status.HTTP_200_OK,
-                )
+                )nected",
             else:
-                Favorite.objects.create(user=request.user, recipe=recipe)
+                Favorite.objects.create(user=request.user, recipe=recipe)ount,
                 return Response(
-                    {"message": "Recipe added to favorites"},
+                    {"message": "Recipe added to favorites"},environ.get("DATABASE_URL", "").split("@")[1].split("/")[0] if "@" in os.environ.get("DATABASE_URL", "") else "unknown"
                     status=status.HTTP_201_CREATED,
-                )
-        except Recipe.DoesNotExist:
-            return Response(
-                {"error": "Recipe not found"}, status=status.HTTP_404_NOT_FOUND
-            )
+                ), status=status.HTTP_200_OK)
+        except Recipe.DoesNotExist:xcept Exception as e:
+            return Response(        print(f"Database check error: {str(e)}")
 
 
-# Add a health check endpoint
-@api_view(["GET"])
-def health_check(request):
-    """Health check endpoint to ensure the API is running"""
-    return Response({"status": "healthy"}, status=status.HTTP_200_OK)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    )        }            },                "admin": "/admin/",                "auth_token": "/api-token-auth/",                "api_root": "/api/",                "health_check": "/health/",            "endpoints": {            "description": "REST API for managing recipes, ratings, comments and more",            "version": "1.0",            "name": "Savora Recipe API",        {    return Response(    """Root endpoint providing API info and documentation"""def api_root(request):@api_view(["GET"])    return Response({"status": "healthy"}, status=status.HTTP_200_OK)    """Health check endpoint to ensure the API is running"""def health_check(request):@api_view(["GET"])# Add a health check endpoint            )                {"error": "Recipe not found"}, status=status.HTTP_404_NOT_FOUND        import traceback
+        traceback.print_exc()
+        return Response({
+            "status": "error",
+            "error": str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(["GET"])
@@ -880,6 +933,7 @@ def api_root(request):
             "description": "REST API for managing recipes, ratings, comments and more",
             "endpoints": {
                 "health_check": "/health/",
+                "database_check": "/db-check/",
                 "api_root": "/api/",
                 "auth_token": "/api-token-auth/",
                 "admin": "/admin/",
