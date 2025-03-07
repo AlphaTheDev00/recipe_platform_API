@@ -1,2 +1,6 @@
-# Remove this duplicate file that's causing conflicts
-# The correct wsgi file is in the recipe_api directory
+# This file is causing confusion - should be removed
+import os
+from recipe_api.wsgi import application
+
+# Make the application object directly available
+application = application
