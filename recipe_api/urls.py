@@ -3,6 +3,7 @@ from django.urls import path, include
 from rest_framework.authtoken.views import obtain_auth_token
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import RedirectView
 
 # Make sure these imports are at the top
 from api.views import health_check, api_root
