@@ -164,8 +164,33 @@ REST_FRAMEWORK = {
 # CORS settings
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = os.environ.get(
-    "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000"
+    "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000,https://savora-recipe.netlify.app"
 ).split(",")
+
+# Allow all origins in development
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+
+# Add CORS headers to all responses
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
 
 # URL Settings
 APPEND_SLASH = False
@@ -180,9 +205,14 @@ if not DEBUG:
     MEDIA_URL = "/media/"
 
     # Security settings for production
-    SECURE_HSTS_SECONDS = 31536000  # 1 year
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    # Temporarily disable some security settings to troubleshoot CORS
+    # SECURE_HSTS_SECONDS = 31536000  # 1 year
+    # SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    # SECURE_HSTS_PRELOAD = True
+    # SECURE_SSL_REDIRECT = True
+    # SESSION_COOKIE_SECURE = True
+    # CSRF_COOKIE_SECURE = True
+    
+    # Add Netlify domain to allowed hosts
+    ALLOWED_HOSTS.append('savora-recipe.netlify.app')
+    ALLOWED_HOSTS.append('savora-recipe-b7493c60c573.herokuapp.com')
