@@ -931,52 +931,21 @@ def health_check(request):
 def database_check(request):
     """Diagnostic endpoint to verify database connection"""
     try:
-        # Get raw database URL for inspection (hide password)
-        db_url = os.environ.get("DATABASE_URL", "")
-        safe_db_url = db_url
-        if "@" in safe_db_url:
-            # Hide password in logs
-            parts = safe_db_url.split("@")
-            if ":" in parts[0]:
-                credentials = parts[0].split(":")
-                credentials[1] = "****"  # Replace password with asterisks
-                parts[0] = ":".join(credentials)
-            safe_db_url = "@".join(parts)
-
-        print(f"DEBUG: Using DATABASE_URL: {safe_db_url}")
-
-        # Try to parse the DSN - this will fail if parameters are invalid
-        import psycopg2
-
-        conn_params = {}
-        # Extract connection parameters without connecting
-        try:
-            params = psycopg2._connect.parse_dsn(db_url)
-            print(f"DEBUG: Parsed DSN parameters: {params}")
-        except Exception as parse_err:
-            print(f"DEBUG: DSN parsing error: {str(parse_err)}")
-            return Response(
-                {
-                    "status": "error",
-                    "error": f"DSN parsing error: {str(parse_err)}",
-                    "raw_url": safe_db_url,
-                },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-        # Try a simple query to verify database connection
+        # Simply check if we can run basic queries
         user_count = User.objects.count()
         recipe_count = Recipe.objects.count()
+        category_count = Category.objects.count()
 
-        # Get database info while hiding credentials
-        if "@" in db_url:
+        # Get database URL for display purposes only
+        db_url = os.environ.get("DATABASE_URL", "")
+        db_host = "unknown"
+
+        # Extract only the host part for security
+        if "@" in db_url and "/" in db_url:
             parts = db_url.split("@")
-            if len(parts) > 1 and "/" in parts[1]:
+            if len(parts) > 1:
                 host_part = parts[1].split("/")[0]
-            else:
-                host_part = "unknown"
-        else:
-            host_part = "unknown"
+                db_host = host_part
 
         return Response(
             {
@@ -984,7 +953,8 @@ def database_check(request):
                 "database_info": {
                     "user_count": user_count,
                     "recipe_count": recipe_count,
-                    "database_host": host_part,
+                    "category_count": category_count,
+                    "database_host": db_host,
                 },
             },
             status=status.HTTP_200_OK,
