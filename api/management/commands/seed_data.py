@@ -517,9 +517,23 @@ class Command(BaseCommand):
             description="Seed database with food recipe data"
         )
         parser.add_argument("--clear", action="store_true", help="Clear existing data")
-        args_parsed, _ = parser.parse_known_args(
-            sys.argv[2:]
-        )  # Skip manage.py and seed_data
+        parser.add_argument(
+            "--users", type=int, default=5, help="Number of users to create"
+        )
+        parser.add_argument(
+            "--recipes", type=int, default=10, help="Number of recipes to create"
+        )
+        parser.add_argument(
+            "--ratings", type=int, default=50, help="Number of ratings to create"
+        )
+        parser.add_argument(
+            "--comments", type=int, default=30, help="Number of comments to create"
+        )
+        parser.add_argument(
+            "--favorites", type=int, default=20, help="Number of favorites to create"
+        )
+
+        args_parsed = parser.parse_args(args)
 
         if args_parsed.clear:
             self.stdout.write("Clearing existing data...")
@@ -538,7 +552,7 @@ class Command(BaseCommand):
 
         # Create normal users
         users = []
-        for i in range(options.get("users", 5)):
+        for i in range(args_parsed.users):
             username = f"user{i+1}"
             if not User.objects.filter(username=username).exists():
                 user = User.objects.create_user(
@@ -553,7 +567,7 @@ class Command(BaseCommand):
 
         # If no users were created (because they already existed), get existing ones
         if not users:
-            users = User.objects.filter(is_superuser=False)[: options.get("users", 5)]
+            users = User.objects.filter(is_superuser=False)[: args_parsed.users]
 
         # Create categories
         categories = {}
@@ -594,7 +608,7 @@ class Command(BaseCommand):
 
         # Create additional random recipes if specified
         random_recipes_created = 0
-        for i in range(options.get("recipes", 10)):
+        for i in range(args_parsed.recipes):
             # Generate food-related title instead of random sentence
             adjective = random.choice(FOOD_ADJECTIVES)
             food_type = random.choice(FOOD_TYPES)
@@ -656,7 +670,7 @@ class Command(BaseCommand):
 
         # Create ratings
         ratings_created = 0
-        for _ in range(options["ratings"]):
+        for _ in range(args_parsed.ratings):
             user = random.choice(users)
             recipe = random.choice(recipes)
 
@@ -677,13 +691,13 @@ class Command(BaseCommand):
 
         # Create comments
         comments_created = 0
-        for _ in range(options["comments"]):
+        for _ in range(args_parsed.comments):
             user = random.choice(users)
             recipe = random.choice(recipes)
 
             # Add some variance to created dates
             days_ago = random.randint(0, 60)
-            created_at = timezone.now() - timedelta(days=days_ago)
+            created_at = timezone.now() - timedelta(days_ago)
 
             Comment.objects.create(
                 user=user,
@@ -695,7 +709,7 @@ class Command(BaseCommand):
 
         # Create favorites
         favorites_created = 0
-        for _ in range(options["favorites"]):
+        for _ in range(args_parsed.favorites):
             user = random.choice(users)
             recipe = random.choice(recipes)
 
@@ -705,7 +719,7 @@ class Command(BaseCommand):
 
             # Add some variance to created dates
             days_ago = random.randint(0, 60)
-            created_at = timezone.now() - timedelta(days=days_ago)
+            created_at = timezone.now() - timedelta(days_ago)
 
             Favorite.objects.create(user=user, recipe=recipe, created_at=created_at)
             favorites_created += 1
