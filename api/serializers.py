@@ -184,7 +184,11 @@ class RecipeSerializer(serializers.ModelSerializer):
         if obj.image:
             # Check if image is a direct URL (string) or a file field
             if isinstance(obj.image, str):
-                # It's already a URL, return it directly
+                # Check if it's a Cloudinary URL
+                if 'cloudinary.com' in obj.image:
+                    # It's a Cloudinary URL, return it directly
+                    return obj.image
+                # It's another type of URL
                 return obj.image
             elif hasattr(obj.image, 'url'):
                 # It's a file field, build the absolute URI
