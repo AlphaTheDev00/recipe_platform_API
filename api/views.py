@@ -37,18 +37,10 @@ class UserViewSet(viewsets.GenericViewSet):
     @action(detail=False, methods=["POST"])
     def register(self, request):
         try:
-            print("\n==== USER REGISTRATION DEBUG ====")
-            print("Registering user with data:", request.data)
-
             # Check if database is accessible
             try:
                 user_count = User.objects.count()
-                print(f"Current user count: {user_count}")
             except Exception as db_err:
-                print(f"Database check error during registration: {str(db_err)}")
-                import traceback
-
-                traceback.print_exc()
                 return Response(
                     {"error": f"Database connection error: {str(db_err)}"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -57,33 +49,23 @@ class UserViewSet(viewsets.GenericViewSet):
             # Check for existing user with same username
             username = request.data.get("username", "")
             if User.objects.filter(username=username).exists():
-                print(f"Username '{username}' already exists!")
                 return Response(
                     {"username": ["A user with that username already exists."]},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
             serializer = self.get_serializer(data=request.data)
-            print("Serializer initialized")
 
             if serializer.is_valid():
-                print("Serializer is valid, saving user")
                 user = serializer.save()
                 token, _ = Token.objects.get_or_create(user=user)
-                print(f"User registered successfully: {user.username} (ID: {user.pk})")
                 return Response(
                     {"token": token.key, "user_id": user.pk, "email": user.email},
                     status=status.HTTP_201_CREATED,
                 )
 
-            print("Registration validation errors:", serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            # Log the error details
-            print(f"Registration error: {str(e)}")
-            import traceback
-
-            traceback.print_exc()
             return Response(
                 {"error": f"Server error: {str(e)}. Please try again later."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -278,7 +260,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """
         Handle exceptions with better error responses
         """
-        print(f"API Exception: {type(exc).__name__}: {str(exc)}")
         return super().handle_exception(exc)
 
     @action(detail=False, methods=["GET"])
@@ -465,10 +446,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         try:
-            print("\n=== Recipe Update Debug ===")
-            print(f"Request Method: {request.method}")
-            print(f"Content-Type: {request.content_type}")
-
             # For multipart form data
             if request.content_type and "multipart/form-data" in request.content_type:
                 # Fix difficulty case issue
@@ -477,7 +454,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     request.data._mutable = True
                     request.data["difficulty"] = difficulty
                     request.data._mutable = False
-                    # Convert difficulty to lowercase
 
                 # Parse JSON strings in form data
                 for field in ["ingredients", "categories"]:
@@ -495,18 +471,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
                                 status=status.HTTP_400_BAD_REQUEST,
                             )
 
-            # Debug the ingredients data
-            print("\n=== Request Data Debug ===")
-            for key, value in request.data.items():
-                if key != "image":  # Skip image binary data
-                    print(f"{key}: {value}")
-
-            # Special debug for ingredients
+            # Handle ingredients data
             if "ingredients" in request.data:
-                print("\n=== Ingredients Debug ===")
                 ingredients_data = request.data.get("ingredients")
-                print(f"Type: {type(ingredients_data)}")
-                print(f"Value: {ingredients_data}")
 
                 # Try to parse JSON if it's a string
                 if isinstance(ingredients_data, str):
@@ -514,17 +481,17 @@ class RecipeViewSet(viewsets.ModelViewSet):
                         import json
 
                         parsed = json.loads(ingredients_data)
-                        print(f"Parsed JSON: {parsed}")
-                        print(f"Parsed Type: {type(parsed)}")
 
                         # Modify request data to use parsed ingredients
                         if isinstance(parsed, list) and len(parsed) > 0:
                             request.data._mutable = True
                             request.data["ingredients"] = parsed
                             request.data._mutable = False
-                            print("Successfully parsed and updated ingredients data")
-                    except json.JSONDecodeError as e:
-                        print(f"JSON Parse Error: {str(e)}")
+                    except json.JSONDecodeError:
+                        return Response(
+                            {"error": "Invalid ingredients format"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
 
                 # Ensure ingredients are included in the data for serializer
                 if ingredients_data:

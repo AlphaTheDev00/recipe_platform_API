@@ -164,8 +164,11 @@ REST_FRAMEWORK = {
 # CORS settings
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = os.environ.get(
-    "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000,https://savora-recipe.netlify.app"
+    "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000,http://localhost:5174,http://localhost:5175,https://savora-recipe.netlify.app"
 ).split(",")
+
+# Allow all CORS requests in development
+CORS_ALLOW_ALL_ORIGINS = DEBUG
 
 # Allow all origins in development
 if DEBUG:
@@ -190,7 +193,13 @@ CORS_ALLOW_HEADERS = [
     "user-agent",
     "x-csrftoken",
     "x-requested-with",
+    "cache-control",
+    "pragma",
+    "expires",
 ]
+
+# Allow credentials
+CORS_ALLOW_CREDENTIALS = True
 
 # URL Settings
 APPEND_SLASH = False
