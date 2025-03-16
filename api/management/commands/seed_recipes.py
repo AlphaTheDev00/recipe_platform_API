@@ -372,15 +372,7 @@ class Command(BaseCommand):
                 # Select a random image URL
                 image_url = random.choice(food_image_urls)
                 
-                # Just store the URL directly for now
-                recipe.image = f"{image_url}?w=800&h=600&fit=crop&crop=entropy"
-                recipe.save()
-                
-                self.stdout.write(self.style.SUCCESS(f"Added image URL to recipe: {title}"))
-                
-                # Uncomment this section if you have valid Cloudinary credentials
-                '''
-                # Download the image
+                # Download the image and upload to Cloudinary
                 response = requests.get(f"{image_url}?w=800&h=600&fit=crop&crop=entropy")
                 if response.status_code == 200:
                     # Create a temporary file
@@ -400,13 +392,17 @@ class Command(BaseCommand):
                         
                         # Update recipe with Cloudinary URL
                         recipe.image = cloudinary_response['secure_url']
-                        recipe.save()
+                        recipe.save(update_fields=['image'])
                         
                     # Clean up the temporary file
                     os.unlink(img_temp.name)
                     
-                    self.stdout.write(self.style.SUCCESS(f"Added image to recipe: {title}"))
-                '''
+                    self.stdout.write(self.style.SUCCESS(f"Added Cloudinary image to recipe: {title}"))
+                else:
+                    # Fallback to direct URL if image download fails
+                    recipe.image = f"{image_url}?w=800&h=600&fit=crop&crop=entropy"
+                    recipe.save(update_fields=['image'])
+                    self.stdout.write(self.style.WARNING(f"Failed to download image, using direct URL for recipe: {title}"))
             except Exception as e:
                 self.stdout.write(self.style.WARNING(f"Failed to add image to recipe {title}: {str(e)}"))
 
