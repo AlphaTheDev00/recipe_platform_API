@@ -5,7 +5,13 @@ from api.models import Recipe, Category, Ingredient, Rating, Comment
 from django.utils import timezone
 from faker import Faker
 import os
+import requests
+import tempfile
+from django.core.files import File
 from django.conf import settings
+import cloudinary
+import cloudinary.uploader
+from cloudinary.utils import cloudinary_url
 
 fake = Faker()
 
@@ -265,6 +271,14 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         count = options["count"]
         username = options["user"]
+        
+        # Configure Cloudinary
+        cloudinary.config(
+            cloud_name=settings.CLOUDINARY_STORAGE['CLOUD_NAME'],
+            api_key=settings.CLOUDINARY_STORAGE['API_KEY'],
+            api_secret=settings.CLOUDINARY_STORAGE['API_SECRET'],
+            secure=True
+        )
 
         # Get or create user
         if username:
@@ -338,6 +352,54 @@ class Command(BaseCommand):
                 created_at=timezone.now()
                 - timezone.timedelta(days=random.randint(0, 365)),
             )
+            
+            # Add image to recipe
+            try:
+                # Sample food image URLs
+                food_image_urls = [
+                    "https://images.unsplash.com/photo-1546069901-ba9599a7e63c",
+                    "https://images.unsplash.com/photo-1504674900247-0877df9cc836",
+                    "https://images.unsplash.com/photo-1512621776951-a57141f2eefd",
+                    "https://images.unsplash.com/photo-1473093295043-cdd812d0e601",
+                    "https://images.unsplash.com/photo-1498837167922-ddd27525d352",
+                    "https://images.unsplash.com/photo-1504754524776-8f4f37790ca0",
+                    "https://images.unsplash.com/photo-1476224203421-9ac39bcb3327",
+                    "https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd",
+                    "https://images.unsplash.com/photo-1432139509613-5c4255815697",
+                    "https://images.unsplash.com/photo-1481931098730-318b6f776db0",
+                ]
+                
+                # Select a random image URL
+                image_url = random.choice(food_image_urls)
+                
+                # Download the image
+                response = requests.get(f"{image_url}?w=800&h=600&fit=crop&crop=entropy")
+                if response.status_code == 200:
+                    # Create a temporary file
+                    with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as img_temp:
+                        img_temp.write(response.content)
+                        img_temp.flush()
+                    
+                    # Upload to Cloudinary
+                    with open(img_temp.name, 'rb') as img_file:
+                        cloudinary_response = cloudinary.uploader.upload(
+                            img_file,
+                            folder="recipe_images",
+                            public_id=f"recipe_{recipe.id}",
+                            overwrite=True,
+                            resource_type="image"
+                        )
+                        
+                        # Update recipe with Cloudinary URL
+                        recipe.image = cloudinary_response['secure_url']
+                        recipe.save()
+                        
+                    # Clean up the temporary file
+                    os.unlink(img_temp.name)
+                    
+                    self.stdout.write(self.style.SUCCESS(f"Added image to recipe: {title}"))
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(f"Failed to add image to recipe {title}: {str(e)}"))
 
             # Add categories
             recipe.categories.set(recipe_categories)
