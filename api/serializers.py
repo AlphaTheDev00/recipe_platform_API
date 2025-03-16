@@ -20,22 +20,25 @@ class UserProfileSerializer(serializers.ModelSerializer):
         extra_kwargs = {"profile_picture": {"write_only": True, "required": False}}
 
     def get_profile_picture_url(self, obj):
+        if not obj.profile_picture:
+            return None
+            
         request = self.context.get("request")
-        if obj.profile_picture and hasattr(obj.profile_picture, "url"):
-            if request:
-                # Get the full URL including domain
-                return request.build_absolute_uri(obj.profile_picture.url)
-            # For Heroku deployment
-            from django.conf import settings
-
-            if settings.DEBUG:
-                return obj.profile_picture.url
-            elif settings.AWS_STORAGE_BUCKET_NAME:
-                # Return S3 URL if S3 is configured
-                return f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{obj.profile_picture.name}"
-            else:
-                # Fallback to a relative URL
-                return obj.profile_picture.url
+        
+        # For Cloudinary storage in production
+        from django.conf import settings
+        if not settings.DEBUG and hasattr(obj.profile_picture, 'url'):
+            # Cloudinary URLs are already absolute
+            return obj.profile_picture.url
+            
+        # For local development with request context
+        if request and hasattr(obj.profile_picture, "url"):
+            return request.build_absolute_uri(obj.profile_picture.url)
+            
+        # Fallback to direct URL if available
+        if hasattr(obj.profile_picture, "url"):
+            return obj.profile_picture.url
+            
         return None
 
 
@@ -56,17 +59,24 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {"password": {"write_only": True}, "email": {"required": True}}
 
     def get_profile_picture_url(self, obj):
-        if hasattr(obj, "profile") and obj.profile.profile_picture:
-            request = self.context.get("request")
-            from django.conf import settings
-
-            if request:
-                return request.build_absolute_uri(obj.profile.profile_picture.url)
-            elif settings.AWS_STORAGE_BUCKET_NAME:
-                # Return S3 URL if S3 is configured
-                return f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{obj.profile.profile_picture.name}"
-            else:
-                return obj.profile.profile_picture.url
+        if not hasattr(obj, "profile") or not obj.profile.profile_picture:
+            return None
+            
+        # For Cloudinary storage in production
+        from django.conf import settings
+        if not settings.DEBUG and hasattr(obj.profile.profile_picture, 'url'):
+            # Cloudinary URLs are already absolute
+            return obj.profile.profile_picture.url
+            
+        # For local development with request context
+        request = self.context.get("request")
+        if request and hasattr(obj.profile.profile_picture, "url"):
+            return request.build_absolute_uri(obj.profile.profile_picture.url)
+            
+        # Fallback to direct URL if available
+        if hasattr(obj.profile.profile_picture, "url"):
+            return obj.profile.profile_picture.url
+            
         return None
 
     def create(self, validated_data):
@@ -107,8 +117,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        request = self.context.get("request")
-
+        
         # Add this check to ensure profile_picture_url is always included
         if "profile" in representation and representation["profile"]:
             if (
@@ -116,14 +125,21 @@ class UserSerializer(serializers.ModelSerializer):
                 and hasattr(instance, "profile")
                 and instance.profile.profile_picture
             ):
-                if request:
-                    representation["profile"]["profile_picture_url"] = (
-                        request.build_absolute_uri(instance.profile.profile_picture.url)
-                    )
+                # For Cloudinary storage in production
+                from django.conf import settings
+                if not settings.DEBUG and hasattr(instance.profile.profile_picture, 'url'):
+                    # Cloudinary URLs are already absolute
+                    representation["profile"]["profile_picture_url"] = instance.profile.profile_picture.url
                 else:
-                    representation["profile"][
-                        "profile_picture_url"
-                    ] = instance.profile.profile_picture.url
+                    # For local development with request context
+                    request = self.context.get("request")
+                    if request and hasattr(instance.profile.profile_picture, "url"):
+                        representation["profile"]["profile_picture_url"] = (
+                            request.build_absolute_uri(instance.profile.profile_picture.url)
+                        )
+                    # Fallback to direct URL
+                    elif hasattr(instance.profile.profile_picture, "url"):
+                        representation["profile"]["profile_picture_url"] = instance.profile.profile_picture.url
 
         return representation
 
@@ -296,11 +312,24 @@ class CommentSerializer(serializers.ModelSerializer):
         )
 
     def get_profile_picture_url(self, obj):
-        if hasattr(obj.user, "profile") and obj.user.profile.profile_picture:
-            request = self.context.get("request")
-            if request:
-                return request.build_absolute_uri(obj.user.profile.profile_picture.url)
+        if not hasattr(obj.user, "profile") or not obj.user.profile.profile_picture:
+            return None
+            
+        # For Cloudinary storage in production
+        from django.conf import settings
+        if not settings.DEBUG and hasattr(obj.user.profile.profile_picture, 'url'):
+            # Cloudinary URLs are already absolute
             return obj.user.profile.profile_picture.url
+            
+        # For local development with request context
+        request = self.context.get("request")
+        if request and hasattr(obj.user.profile.profile_picture, "url"):
+            return request.build_absolute_uri(obj.user.profile.profile_picture.url)
+            
+        # Fallback to direct URL if available
+        if hasattr(obj.user.profile.profile_picture, "url"):
+            return obj.user.profile.profile_picture.url
+            
         return None
 
 

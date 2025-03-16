@@ -99,12 +99,21 @@ class UserViewSet(viewsets.GenericViewSet):
                     pass
 
             # Handle profile picture separately
-            profile_picture = request.FILES.get("profile.profile_picture")
+            # Check for profile picture in different possible formats
+            profile_picture = None
+            for key in request.FILES:
+                if 'profile_picture' in key or (key == 'profile.profile_picture'):
+                    profile_picture = request.FILES[key]
+                    break
+                    
             if profile_picture:
                 if not hasattr(request.user, "profile"):
                     UserProfile.objects.create(user=request.user)
                 request.user.profile.profile_picture = profile_picture
                 request.user.profile.save()
+                
+                # Log success for debugging
+                print(f"Profile picture updated for user {request.user.username}")
 
             # Update other profile fields if provided
             if profile_data:
