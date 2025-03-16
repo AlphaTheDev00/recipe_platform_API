@@ -227,13 +227,12 @@ if not DEBUG:
     MEDIA_URL = "/media/"
 
     # Security settings for production
-    # Temporarily disable some security settings to troubleshoot CORS
-    # SECURE_HSTS_SECONDS = 31536000  # 1 year
-    # SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    # SECURE_HSTS_PRELOAD = True
-    # SECURE_SSL_REDIRECT = True
-    # SESSION_COOKIE_SECURE = True
-    # CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
     
     # Add Netlify domain to allowed hosts
     ALLOWED_HOSTS.append('savora-recipe.netlify.app')

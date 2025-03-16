@@ -70,6 +70,7 @@ class Recipe(models.Model):
         default="medium",
     )
     image = models.ImageField(upload_to="recipe_images/", null=True, blank=True)
+    image_url = models.URLField(max_length=500, null=True, blank=True)
 
     def __str__(self):
         return self.title

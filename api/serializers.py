@@ -181,21 +181,15 @@ class RecipeSerializer(serializers.ModelSerializer):
         extra_kwargs = {"image": {"write_only": True, "required": False}}
 
     def get_image_url(self, obj):
-        if obj.image:
-            # Check if image is a direct URL (string) or a file field
-            if isinstance(obj.image, str):
-                # Check if it's a Cloudinary URL
-                if 'cloudinary.com' in obj.image:
-                    # It's a Cloudinary URL, return it directly
-                    return obj.image
-                # It's another type of URL
-                return obj.image
-            elif hasattr(obj.image, 'url'):
-                # It's a file field, build the absolute URI
-                request = self.context.get("request")
-                if request:
-                    return request.build_absolute_uri(obj.image.url)
-                return obj.image.url
+        # First check if image_url field is populated
+        if obj.image_url:
+            return obj.image_url
+        # Then check if image field is populated
+        elif obj.image and hasattr(obj.image, 'url'):
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
         return None
 
     def get_is_favorited(self, obj):
