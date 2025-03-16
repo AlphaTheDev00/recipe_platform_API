@@ -372,6 +372,14 @@ class Command(BaseCommand):
                 # Select a random image URL
                 image_url = random.choice(food_image_urls)
                 
+                # Just store the URL directly for now
+                recipe.image = f"{image_url}?w=800&h=600&fit=crop&crop=entropy"
+                recipe.save()
+                
+                self.stdout.write(self.style.SUCCESS(f"Added image URL to recipe: {title}"))
+                
+                # Uncomment this section if you have valid Cloudinary credentials
+                '''
                 # Download the image
                 response = requests.get(f"{image_url}?w=800&h=600&fit=crop&crop=entropy")
                 if response.status_code == 200:
@@ -398,6 +406,7 @@ class Command(BaseCommand):
                     os.unlink(img_temp.name)
                     
                     self.stdout.write(self.style.SUCCESS(f"Added image to recipe: {title}"))
+                '''
             except Exception as e:
                 self.stdout.write(self.style.WARNING(f"Failed to add image to recipe {title}: {str(e)}"))
 
